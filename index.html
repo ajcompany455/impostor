@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Who is the Impostor?</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #0a0a1a, #120a25);
+      color: #0ff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 20px;
+    }
+    .glow {
+      text-shadow: 0 0 12px #0ff, 0 0 24px #0ff;
+      margin-bottom: 20px;
+    }
+    .container {
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+    }
+    input, button {
+      background: rgba(0, 20, 40, 0.85);
+      color: #0ff;
+      border: 1px solid #0ff;
+      padding: 14px;
+      margin: 12px 0;
+      font-size: 18px;
+      border-radius: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      transition: all 0.25s ease;
+    }
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 15px #0ff;
+    }
+    button {
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    button:hover {
+      background: rgba(0, 40, 80, 0.95);
+      box-shadow: 0 0 20px #0ff;
+      transform: translateY(-2px);
+    }
+    .hidden { display: none; }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 25px;
+    }
+    #langBtn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: auto;
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 20px;
+      background: rgba(0, 10, 20, 0.7);
+      border: 1px solid #0ff;
+      color: #0ff;
+    }
+    #exibicao {
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 15px;
+      margin: 20px 0;
+      background: rgba(0, 10, 20, 0.5);
+      border-radius: 12px;
+      border: 1px solid #0ff;
+    }
+    #proximoJogador {
+      font-size: 18px;
+      margin: 15px 0;
+      color: #fff;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 25px;
+    }
+    p {
+      font-size: 18px;
+      margin: 15px 0;
+    }
+    .button-container {
+      margin-top: 40px;
+      margin-bottom: 20px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.9);
+    }
+    .modal-content {
+      background: #0c0c1e;
+      margin: 5% auto;
+      padding: 25px;
+      width: 90%;
+      max-width: 500px;
+      border: 1px solid #0ff;
+      border-radius: 12px;
+      color: #0ff;
+      text-align: left;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: #fff;
+    }
+    .rules-title {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #0ff;
+      text-shadow: 0 0 10px #0ff;
+    }
+    .rules-text {
+      line-height: 1.6;
+    }
+    ul, ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    li {
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <button id="langBtn" onclick="toggleLang()">🌐 EN</button>
+
+  <div class="container">
+    <div id="tela1">
+      <h1 class="glow">🎰 Quem é o Impostor? 🎰</h1>
+      <p id="txt1">Escolha o número de jogadores (3 a 50):</p>
+      <input type="number" id="numJogadores" min="3" max="50" value="5" />
+      <div class="button-container">
+        <button onclick="iniciarJogo()">Próximo</button>
+      </div>
+      <button onclick="abrirRegras()" style="background:rgba(20,20,40,0.8); margin-top:10px;">📜 Regras do Jogo</button>
+    </div>
+
+    <div id="tela2" class="hidden">
+      <h2 class="glow" id="txt2">Clique para ver sua palavra</h2>
+      <button id="btnRevelar" onclick="revelar()">Revelar Minha Palavra</button>
+      <div id="exibicao"></div>
+      <p id="proximoJogador"></p>
+      <div class="button-container">
+        <button onclick="voltarParaInicio()" style="background:rgba(30,0,10,0.85);">⬅️ Voltar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalRegras" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="fecharRegras()">&times;</span>
+      <div id="rulesText" class="rules-text"></div>
+    </div>
+  </div>
+
+  <script>
+    let lang = navigator.language.startsWith('en') ? 'en' : 'pt';
+
+    const textos = {
+      pt: {
+        title: "Quem é o Impostor?",
+        txt1: "Escolha o número de jogadores (3 a 50):",
+        txt2: "Clique para ver sua palavra",
+        revealBtn: "Revelar Minha Palavra",
+        next: "Próximo: ",
+        impostor: "IMPOSTOR",
+        of: "de",
+        discussion: "✅ Todos viram suas palavras!<br>Agora discutam: Quem é o Impostor?",
+        newGame: "🔄 Novo Jogo",
+        newGroup: "👥 Novo Grupo",
+        back: "⬅️ Voltar",
+        langBtn: "🌐 EN"
+      },
+      en: {
+        title: "Who is the Impostor?",
+        txt1: "Choose number of players (3 to 50):",
+        txt2: "Click to see your word",
+        revealBtn: "Reveal My Word",
+        next: "Next: ",
+        impostor: "IMPOSTOR",
+        of: "of",
+        discussion: "✅ Everyone saw their words!<br>Now discuss: Who is the Impostor?",
+        newGame: "🔄 New Game",
+        newGroup: "👥 New Group",
+        back: "⬅️ Back",
+        langBtn: "🌐 PT"
+      }
+    };
+
+    // 🔥 44 TEMAS EXPANDIDOS — +600 combinações únicas
+    const temasFixos = [
+      // Continentes & Geografia
+      { dica: { pt: "Continentes", en: "Continents" }, 
+        palavras: { 
+          pt: ["África", "América", "Ásia", "Europa", "Oceania", "Antártida"],
+          en: ["Africa", "America", "Asia", "Europe", "Oceania", "Antarctica"]
+        } 
+      },
+      { dica: { pt: "Países", en: "Countries" }, 
+        palavras: { 
+          pt: ["Brasil", "Moçambique", "Egito", "Japão", "França", "Canadá", "Índia", "Alemanha", "Estados Unidos", "China", "Rússia", "Austrália", "Quênia", "Portugal", "África do Sul"],
+          en: ["Brazil", "Mozambique", "Egypt", "Japan", "France", "Canada", "India", "Germany", "United States", "China", "Russia", "Australia", "Kenya", "Portugal", "South Africa"]
+        } 
+      },
+      { dica: { pt: "Cidade", en: "City" },
+        palavras: { 
+          pt: ["Maputo", "Paris", "Tóquio", "Nova Iorque", "Londres", "Cairo", "São Paulo", "Joanesburgo", "Berlim", "Roma", "Madrid", "Pequim", "Sydney", "Dubai", "Istambul"],
+          en: ["Maputo", "Paris", "Tokyo", "New York", "London", "Cairo", "São Paulo", "Johannesburg", "Berlin", "Rome", "Madrid", "Beijing", "Sydney", "Dubai", "Istanbul"]
+        } 
+      },
+      { dica: { pt: "Rio", en: "River" },
+        palavras: { 
+          pt: ["Nilo", "Amazonas", "Mississippi", "Zambeze", "Danúbio", "Ganges", "Yangtzé", "Volga", "Rio Reno", "Sena", "Tâmisa", "Paraná", "Congo", "Murray"],
+          en: ["Nile", "Amazon", "Mississippi", "Zambezi", "Danube", "Ganges", "Yangtze", "Volga", "Rhine", "Seine", "Thames", "Paraná", "Congo", "Murray"]
+        } 
+      },
+      { dica: { pt: "Montanha", en: "Mountain" },
+        palavras: { 
+          pt: ["Everest", "Kilimanjaro", "Monte Fuji", "Alpes", "Andes", "Monte Roraima", "Table Mountain", "Atlas", "Monte Branco", "Monte McKinley", "Himalaia", "Drakensberg"],
+          en: ["Everest", "Kilimanjaro", "Mount Fuji", "Alps", "Andes", "Mount Roraima", "Table Mountain", "Atlas", "Mont Blanc", "Denali", "Himalayas", "Drakensberg"]
+        } 
+      },
+
+      // Animais
+      { dica: { pt: "Animais Selvagens", en: "Wild Animals" }, 
+        palavras: { 
+          pt: ["Leão", "Elefante", "Tigre", "Girafa", "Zebra", "Hipopótamo", "Rinoceronte", "Chimpanzé", "Guepardo", "Jacaré", "Urso", "Lobo", "Suricato", "Gnu"],
+          en: ["Lion", "Elephant", "Tiger", "Giraffe", "Zebra", "Hippopotamus", "Rhinoceros", "Chimpanzee", "Cheetah", "Alligator", "Bear", "Wolf", "Meerkat", "Wildebeest"]
+        } 
+      },
+      { dica: { pt: "Animais Marinhos", en: "Marine Animals" }, 
+        palavras: { 
+          pt: ["Tubarão", "Golfinho", "Baleia", "Polvo", "Arraia", "Peixe-palhaço", "Lula", "Caranguejo", "Orca", "Medusa", "Cavalo-marinho", "Tartaruga-marinha", "Estrela-do-mar"],
+          en: ["Shark", "Dolphin", "Whale", "Octopus", "Ray", "Clownfish", "Squid", "Crab", "Orca", "Jellyfish", "Seahorse", "Sea Turtle", "Starfish"]
+        } 
+      },
+      { dica: { pt: "Animais Domésticos", en: "Pets" }, 
+        palavras: { 
+          pt: ["Cachorro", "Gato", "Coelho", "Pássaro", "Peixe", "Hamster", "Porquinho-da-índia", "Cavalo", "Papagaio", "Tartaruga", "Furão", "Porco"],
+          en: ["Dog", "Cat", "Rabbit", "Bird", "Fish", "Hamster", "Guinea Pig", "Horse", "Parrot", "Turtle", "Ferret", "Pig"]
+        } 
+      },
+
+      // Marcas
+      { dica: { pt: "Marca de aparelho", en: "Device brand" },
+        palavras: { 
+          pt: ["Apple", "Samsung", "Google", "Microsoft", "Sony", "LG", "Huawei", "Xiaomi", "Dell", "HP", "Lenovo", "Intel", "Nvidia", "Meta"],
+          en: ["Apple", "Samsung", "Google", "Microsoft", "Sony", "LG", "Huawei", "Xiaomi", "Dell", "HP", "Lenovo", "Intel", "Nvidia", "Meta"]
+        } 
+      },
+      { dica: { pt: "Marcas de Carros", en: "Car Brands" }, 
+        palavras: { 
+          pt: ["Toyota", "Ford", "BMW", "Mercedes", "Volkswagen", "Tesla", "Honda", "Ferrari", "Audi", "Hyundai", "Renault", "Chevrolet", "Porsche", "Land Rover"],
+          en: ["Toyota", "Ford", "BMW", "Mercedes", "Volkswagen", "Tesla", "Honda", "Ferrari", "Audi", "Hyundai", "Renault", "Chevrolet", "Porsche", "Land Rover"]
+        } 
+      },
+      { dica: { pt: "Marcas de Roupas", en: "Clothing Brands" }, 
+        palavras: { 
+          pt: ["Nike", "Adidas", "Puma", "Zara", "H&M", "Gucci", "Louis Vuitton", "Calvin Klein", "Levi's", "Uniqlo", "Balenciaga", "Prada", "Versace", "Chanel"],
+          en: ["Nike", "Adidas", "Puma", "Zara", "H&M", "Gucci", "Louis Vuitton", "Calvin Klein", "Levi's", "Uniqlo", "Balenciaga", "Prada", "Versace", "Chanel"]
+        } 
+      },
+      { dica: { pt: "Comida", en: "Food" },
+        palavras: { 
+          pt: ["Coca-Cola", "McDonald's", "Nestlé", "Pepsi", "Kellogg's", "Unilever", "Danone", "Mars", "Kraft", "Heinz", "Red Bull", "Monster", "Lays", "Cadbury"],
+          en: ["Coca-Cola", "McDonald's", "Nestlé", "Pepsi", "Kellogg's", "Unilever", "Danone", "Mars", "Kraft", "Heinz", "Red Bull", "Monster", "Lays", "Cadbury"]
+        } 
+      },
+
+      // Cultura Geral
+      { dica: { pt: "Instrumentos Musicais", en: "Musical Instruments" }, 
+        palavras: { 
+          pt: ["Piano", "Guitarra", "Violino", "Bateria", "Flauta", "Saxofone", "Trompete", "Harpa", "Violoncelo", "Órgão", "Acordeão", "Banjo", "Didgeridoo", "Mbira"],
+          en: ["Piano", "Guitar", "Violin", "Drums", "Flute", "Saxophone", "Trumpet", "Harp", "Cello", "Organ", "Accordion", "Banjo", "Didgeridoo", "Mbira"]
+        } 
+      },
+      { dica: { pt: "Estilos Musicais", en: "Music Genres" }, 
+        palavras: { 
+          pt: ["Rock", "Pop", "Hip Hop", "Jazz", "Reggae", "Kizomba", "Marrabenta", "Clássica", "Samba", "Fado", "Afrobeats", "EDM", "Country", "Blues"],
+          en: ["Rock", "Pop", "Hip Hop", "Jazz", "Reggae", "Kizomba", "Marrabenta", "Classical", "Samba", "Fado", "Afrobeats", "EDM", "Country", "Blues"]
+        } 
+      },
+      { dica: { pt: "Profissões", en: "Professions" }, 
+        palavras: { 
+          pt: ["Médico", "Professor", "Engenheiro", "Programador", "Enfermeiro", "Piloto", "Advogado", "Agricultor", "Arquiteto", "Jornalista", "Chef", "Policial", "Bombeiro", "Artista"],
+          en: ["Doctor", "Teacher", "Engineer", "Programmer", "Nurse", "Pilot", "Lawyer", "Farmer", "Architect", "Journalist", "Chef", "Police Officer", "Firefighter", "Artist"]
+        } 
+      },
+      { dica: { pt: "Religião", en: "Religion" },
+        palavras: { 
+          pt: ["Cristianismo", "Islamismo", "Hinduísmo", "Budismo", "Judaísmo", "Animismo", "Siquismo", "Xintoísmo", "Baháʼí", "Jainismo", "Zoroastrismo", "Espiritismo"],
+          en: ["Christianity", "Islam", "Hinduism", "Buddhism", "Judaism", "Animism", "Sikhism", "Shinto", "Baháʼí", "Jainism", "Zoroastrianism", "Spiritism"]
+        } 
+      },
+      { dica: { pt: "Idiomas", en: "Languages" }, 
+        palavras: { 
+          pt: ["Português", "Inglês", "Espanhol", "Francês", "Árabe", "Mandarim", "Alemão", "Italiano", "Russo", "Japonês", "Coreano", "Holandês", "Suaíli", "Xichangana"],
+          en: ["Portuguese", "English", "Spanish", "French", "Arabic", "Mandarin", "German", "Italian", "Russian", "Japanese", "Korean", "Dutch", "Swahili", "Xichangana"]
+        } 
+      },
+      { dica: { pt: "Comida", en: "Food" },
+        palavras: { 
+          pt: ["Pizza", "Sushi", "Feijoada", "Hambúrguer", "Piri-piri", "Macarrão", "Arroz", "Batata Frita", "Tacos", "Curry", "Pão", "Queijo", "Chocolate", "Pudim"],
+          en: ["Pizza", "Sushi", "Feijoada", "Hamburger", "Piri-piri", "Pasta", "Rice", "French Fries", "Tacos", "Curry", "Bread", "Cheese", "Chocolate", "Pudding"]
+        } 
+      },
+
+      // Esportes
+      { dica: { pt: "Esportes", en: "Sports" },
+        palavras: { 
+          pt: ["Futebol", "Basquetebol", "Ténis", "Natação", "Atletismo", "Voleibol", "Ginástica", "Boxe", "Judô", "Ciclismo", "Remo", "Esgrima", "Handebol", "Rúgbi"],
+          en: ["Football", "Basketball", "Tennis", "Swimming", "Athletics", "Volleyball", "Gymnastics", "Boxing", "Judo", "Cycling", "Rowing", "Fencing", "Handball", "Rugby"]
+        } 
+      },
+      { dica: { pt: "Equipamentos Esportivos", en: "Sports Equipment" }, 
+        palavras: { 
+          pt: ["Bola", "Raquete", "Taco", "Capacete", "Patins", "Rede", "Luva", "Tênis", "Óculos", "Protetor", "Cinto", "Bicicleta", "Prancha", "Arco"],
+          en: ["Ball", "Racket", "Bat", "Helmet", "Skates", "Net", "Glove", "Sneakers", "Goggles", "Guard", "Belt", "Bicycle", "Board", "Bow"]
+        } 
+      },
+
+      // Ciência
+      { dica: { pt: "Elementos Químicos", en: "Chemical Elements" }, 
+        palavras: { 
+          pt: ["Oxigênio", "Hidrogênio", "Carbono", "Ouro", "Ferro", "Prata", "Cobre", "Nitrogênio", "Hélio", "Sódio", "Cloro", "Mercúrio", "Chumbo", "Zinco"],
+          en: ["Oxygen", "Hydrogen", "Carbon", "Gold", "Iron", "Silver", "Copper", "Nitrogen", "Helium", "Sodium", "Chlorine", "Mercury", "Lead", "Zinc"]
+        } 
+      },
+      { dica: { pt: "Sistema Solar", en: "Solar System" },
+        palavras: { 
+          pt: ["Mercúrio", "Vênus", "Terra", "Marte", "Júpiter", "Saturno", "Urano", "Netuno", "Plutão", "Lua", "Sol"],
+          en: ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "Moon", "Sun"]
+        } 
+      },
+      { dica: { pt: "Inventores", en: "Inventors" }, 
+        palavras: { 
+          pt: ["Edison", "Tesla", "Newton", "Da Vinci", "Curie", "Bell", "Jobs", "Berners-Lee", "Galileu", "Einstein", "Darwin", "Pasteur", "Volta", "Franklin"],
+          en: ["Edison", "Tesla", "Newton", "Da Vinci", "Curie", "Bell", "Jobs", "Berners-Lee", "Galileo", "Einstein", "Darwin", "Pasteur", "Volta", "Franklin"]
+        } 
+      },
+
+      // Entretenimento
+      { dica: { pt: "Filmes", en: "Movies" },
+        palavras: { 
+          pt: ["Titanic", "Avatar", "Matrix", "Pantera Negra", "Interestelar", "Forrest Gump", "Toy Story", "Harry Potter", "Senhor dos Anéis", "Vingadores", "Jurassic Park", "Star Wars", "Pulp Fiction", "Coringa"],
+          en: ["Titanic", "Avatar", "The Matrix", "Black Panther", "Interstellar", "Forrest Gump", "Toy Story", "Harry Potter", "Lord of the Rings", "Avengers", "Jurassic Park", "Star Wars", "Pulp Fiction", "Joker"]
+        } 
+      },
+      { dica: { pt: "Jogos", en: "Games" },
+        palavras: { 
+          pt: ["Minecraft", "Fortnite", "Subway Surfers", "FIFA", "Call of Duty", "Tetris", "PUBG", "Roblox", "Grand Theft Auto", "League of Legends", "Valorant", "Clash Royale", "Free Fire"],
+          en: ["Minecraft", "Fortnite", "Subway Surfers", "FIFA", "Call of Duty", "Tetris", "PUBG", "Roblox", "Grand Theft Auto", "League of Legends", "Valorant", "Clash Royale", "Free Fire"]
+        } 
+      },
+      { dica: { pt: "Redes Sociais", en: "Social Media" }, 
+        palavras: { 
+          pt: ["WhatsApp", "Instagram", "Facebook", "TikTok", "YouTube", "X", "LinkedIn", "Snapchat", "Reddit", "Pinterest", "Discord", "Telegram", "Threads"],
+          en: ["WhatsApp", "Instagram", "Facebook", "TikTok", "YouTube", "X", "LinkedIn", "Snapchat", "Reddit", "Pinterest", "Discord", "Telegram", "Threads"]
+        } 
+      },
+
+      // Liderança & História
+      { dica: { pt: "Presidentes", en: "Presidents" }, 
+        palavras: { 
+          pt: ["Joe Biden", "Luiz Inácio Lula", "Emmanuel Macron", "Nelson Mandela", "Barack Obama", "Xi Jinping", "Vladimir Putin", "Angela Merkel", "Justin Trudeau", "Cyril Ramaphosa", "Paul Kagame", "Ellen Johnson Sirleaf", "Michelle Bachelet"],
+          en: ["Joe Biden", "Lula", "Emmanuel Macron", "Nelson Mandela", "Barack Obama", "Xi Jinping", "Vladimir Putin", "Angela Merkel", "Justin Trudeau", "Cyril Ramaphosa", "Paul Kagame", "Ellen Johnson Sirleaf", "Michelle Bachelet"]
+        } 
+      },
+      { dica: { pt: "Líderes Históricos", en: "Historical Leaders" }, 
+        palavras: { 
+          pt: ["Napoleão", "Cleópatra", "Gengis Khan", "Rainha Elizabeth", "Julius César", "Shaka Zulu", "D. João VI", "Samora Machel", "Martin Luther King", "Mahatma Gandhi", "Winston Churchill", "Joan of Arc", "Malcolm X", "Patrice Lumumba"],
+          en: ["Napoleon", "Cleopatra", "Genghis Khan", "Queen Elizabeth", "Julius Caesar", "Shaka Zulu", "King John VI", "Samora Machel", "Martin Luther King", "Mahatma Gandhi", "Winston Churchill", "Joan of Arc", "Malcolm X", "Patrice Lumumba"]
+        } 
+      },
+      { dica: { pt: "Filósofos", en: "Philosophers" }, 
+        palavras: { 
+          pt: ["Platão", "Aristóteles", "Sócrates", "Descartes", "Nietzsche", "Kant", "Confúcio", "Sartre", "Voltaire", "Hume", "Spinoza", "Simone de Beauvoir", "Frantz Fanon", "Amílcar Cabral"],
+          en: ["Plato", "Aristotle", "Socrates", "Descartes", "Nietzsche", "Kant", "Confucius", "Sartre", "Voltaire", "Hume", "Spinoza", "Simone de Beauvoir", "Frantz Fanon", "Amílcar Cabral"]
+        } 
+      },
+
+      // Moçambique & África
+      { dica: { pt: "Cidades de Moçambique", en: "Cities of Mozambique" }, 
+        palavras: { 
+          pt: ["Maputo", "Beira", "Nampula", "Inhassoro", "Vilankulo", "Tete", "Pemba", "Quelimane", "Xai-Xai", "Chimoio", "Lichinga", "Nacala", "Montepuez", "Ilha de Moçambique"],
+          en: ["Maputo", "Beira", "Nampula", "Inhassoro", "Vilankulo", "Tete", "Pemba", "Quelimane", "Xai-Xai", "Chimoio", "Lichinga", "Nacala", "Montepuez", "Ilha de Moçambique"]
+        } 
+      },
+      { dica: { pt: "Línguas de Moçambique", en: "Languages of Mozambique" }, 
+        palavras: { 
+          pt: ["Português", "Xichangana", "Xitswa", "Sena", "Cisena", "Cinyanja", "Cironga", "Kimwani", "Elomwe", "Cishona", "Ciyao", "Cindau", "Cimakhuwa", "Cinguni"],
+          en: ["Portuguese", "Xichangana", "Xitswa", "Sena", "Cisena", "Cinyanja", "Cironga", "Kimwani", "Elomwe", "Cishona", "Ciyao", "Cindau", "Cimakhuwa", "Cinguni"]
+        } 
+      },
+      { dica: { pt: "País", en: "Country" },
+        palavras: { 
+          pt: ["Moçambique", "África do Sul", "Nigéria", "Quênia", "Egito", "Angola", "Zimbábue", "Tanzânia", "Gana", "Marrocos", "Argélia", "Etiópia", "Uganda", "Costa do Marfim"],
+          en: ["Mozambique", "South Africa", "Nigeria", "Kenya", "Egypt", "Angola", "Zimbabwe", "Tanzania", "Ghana", "Morocco", "Algeria", "Ethiopia", "Uganda", "Ivory Coast"]
+        } 
+      },
+
+      // 🇪🇺 Europa
+      { dica: { pt: "País", en: "Country" },
+        palavras: { 
+          pt: ["França", "Alemanha", "Itália", "Espanha", "Portugal", "Reino Unido", "Suécia", "Grécia", "Holanda", "Bélgica", "Suíça", "Áustria", "Irlanda", "Noruega", "Finlândia"],
+          en: ["France", "Germany", "Italy", "Spain", "Portugal", "United Kingdom", "Sweden", "Greece", "Netherlands", "Belgium", "Switzerland", "Austria", "Ireland", "Norway", "Finland"]
+        } 
+      },
+      { dica: { pt: "Marca", en: "Brand" },
+        palavras: { 
+          pt: ["Zara", "H&M", "Gucci", "Louis Vuitton", "BMW", "Mercedes", "Nokia", "Spotify", "IKEA", "Volvo", "Lego", "ASOS", "Boohoo", "Decathlon"],
+          en: ["Zara", "H&M", "Gucci", "Louis Vuitton", "BMW", "Mercedes", "Nokia", "Spotify", "IKEA", "Volvo", "Lego", "ASOS", "Boohoo", "Decathlon"]
+        } 
+      },
+
+      // 🌐 Internet Moderna
+      { dica: { pt: "Internet", en: "Internet" },
+        palavras: { 
+          pt: ["Hashtag", "Emoji", "Link", "Senha", "Wi-Fi", "Nuvem", "Download", "Streaming", "Upload", "Browser", "Cookie", "Firewall", "Blockchain", "Metaverso"],
+          en: ["Hashtag", "Emoji", "Link", "Password", "Wi-Fi", "Cloud", "Download", "Streaming", "Upload", "Browser", "Cookie", "Firewall", "Blockchain", "Metaverse"]
+        } 
+      },
+      { dica: { pt: "Plataformas", en: "Platforms" },
+        palavras: { 
+          pt: ["Netflix", "Spotify", "Zoom", "Google Meet", "Discord", "Telegram", "PayPal", "Amazon", "eBay", "AliExpress", "Steam", "Epic Games", "OnlyFans"],
+          en: ["Netflix", "Spotify", "Zoom", "Google Meet", "Discord", "Telegram", "PayPal", "Amazon", "eBay", "AliExpress", "Steam", "Epic Games", "OnlyFans"]
+        } 
+      }
+    ];
+
+    let jogadores = [];
+    let indiceAtual = 0;
+    let dicaAtual = "";
+    let palavraSecreta = "";
+    let impostores = [];
+
+    function atualizarTextos() {
+      document.title = textos[lang].title;
+      document.getElementById('txt1').innerText = textos[lang].txt1;
+      document.getElementById('txt2').innerText = textos[lang].txt2;
+      document.getElementById('btnRevelar').innerText = textos[lang].revealBtn;
+      document.getElementById('langBtn').innerText = textos[lang].langBtn;
+      
+      const rules = {
+        pt: {
+          title: "A.J   📜 Regras do Jogo",
+          howToPlay: "Como jogar:",
+          steps: [
+            "Escolha entre 3 e 50 jogadores.",
+            "Cada jogador, um por vez, clica em \"Revelar Minha Palavra\".",
+            "A maioria vê uma <strong>palavra secreta real</strong> (ex: \"A.J\").",
+            "Os <strong>impostores</strong> veem apenas <strong>\"IMPOSTOR X de Y\"</strong> — não sabem a palavra real."
+          ],
+          discussion: "Discussão e votação:",
+          discussionRules: [
+            "Discutam em <strong>3 rodadas</strong> para adivinhar quem é o impostor.",
+            "Se votarem em alguém, e não for impostor, essa pessoa é <strong>eliminada</strong> e o jogo continua.",
+          ],
+          specialRules: "Regras especiais:",
+          specialRulesList: [
+            "Se houver <strong>mais de 1 impostor</strong> e um for descoberto, <strong>ele deve dizer</strong>:<br>&nbsp;&nbsp;&nbsp;&nbsp;<em>\"Há mais impostores!\"</em><br>&nbsp;&nbsp;&nbsp;&nbsp;→ Dá-se <strong>mais uma rodada de dicas</strong> para encontrar os outros. Os impostores ganham quando são apontados enquanto sabem a palavra: eles revelam a palavra."
+          ],
+                       },
+        en: {
+          title: "A.J   📜 Game Rules",
+          howToPlay: "How to play:",
+          steps: [
+            "Choose between 3 and 50 players.",
+            "Each player, one at a time, clicks \"Reveal My Word\".",
+            "Most players see a <strong>real secret word</strong> (e.g., \"A.J\").",
+            "The <strong>impostors</strong> only see <strong>\"IMPOSTOR X of Y\"</strong> — they don't know the real word."
+          ],
+          discussion: "Discussion and voting:",
+          discussionRules: [
+            "Discuss for <strong>3 rounds</strong> to guess who the impostor is.",
+            "If you vote someone and they are not impostor, that player is <strong>eliminated</strong> and the game continues.",
+          ],
+          specialRules: "Special rules:",
+          specialRulesList: [
+            "If there is <strong>more than 1 impostor</strong> and one is discovered, <strong>they must say</strong>:<br>&nbsp;&nbsp;&nbsp;&nbsp;<em>\"There are more impostors!\"</em><br>&nbsp;&nbsp;&nbsp;&nbsp;→ You get <strong>an extra round of clues</strong> to find the others.Impostors win when they are pointed out while they know the word: they reveal the word."
+          ],
+                 }
+      };
+
+      const r = rules[lang];
+      let rulesHTML = `<h2 class="rules-title">${r.title}</h2>`;
+      rulesHTML += `<p><strong>${r.howToPlay}</strong></p><ol>`;
+      r.steps.forEach(step => rulesHTML += `<li>${step}</li>`);
+      rulesHTML += `</ol>`;
+
+      rulesHTML += `<p><strong>${r.discussion}</strong></p><ul>`;
+      r.discussionRules.forEach(rule => rulesHTML += `<li>${rule}</li>`);
+      rulesHTML += `</ul>`;
+
+      rulesHTML += `<p><strong>${r.specialRules}</strong></p><ul>`;
+      r.specialRulesList.forEach(rule => rulesHTML += `<li>${rule}</li>`);
+      rulesHTML += `</ul>`;
+
+      rulesHTML += `<p><strong>${r.win}</strong></p>`;
+      rulesHTML += `<ul><li>${r.crewWin}</li><li>${r.impostorWin}</li></ul>`;
+
+      document.getElementById('rulesText').innerHTML = rulesHTML;
+    }
+
+    function toggleLang() {
+      lang = lang === 'pt' ? 'en' : 'pt';
+      atualizarTextos();
+    }
+
+    function abrirRegras() {
+      document.getElementById('modalRegras').style.display = 'block';
+    }
+
+    function fecharRegras() {
+      document.getElementById('modalRegras').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('modalRegras');
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    function iniciarJogo() {
+      const num = parseInt(document.getElementById('numJogadores').value);
+      if (num < 3 || num > 50) {
+        alert(lang === 'pt' ? "Escolha entre 3 e 50 jogadores!" : "Choose between 3 and 50 players!");
+        return;
+      }
+
+      jogadores = Array.from({length: num}, (_, i) => 
+        lang === 'pt' ? `Jogador ${i + 1}` : `Player ${i + 1}`
+      );
+      document.getElementById('tela1').classList.add('hidden');
+      document.getElementById('tela2').classList.remove('hidden');
+      novaPartida();
+    }
+
+    function novaPartida() {
+      document.getElementById('exibicao').innerHTML = "";
+      document.getElementById('proximoJogador').innerText = `${textos[lang].next}${jogadores[0]}`;
+      
+      const btn = document.getElementById('btnRevelar');
+      btn.style.display = 'block';
+      btn.disabled = false;
+      btn.innerText = textos[lang].revealBtn;
+
+      const fim = document.getElementById('botoesFim');
+      if (fim) fim.remove();
+
+      const tema = temasFixos[Math.floor(Math.random() * temasFixos.length)];
+      dicaAtual = tema.dica[lang];
+      palavraSecreta = tema.palavras[lang][Math.floor(Math.random() * tema.palavras[lang].length)];
+
+      const total = jogadores.length;
+      const numImp = total <= 5 ? 1 :
+                     total <= 10 ? 2 :
+                     total <= 20 ? 3 :
+                     Math.min(5, Math.floor(total / 6));
+
+      impostores = Array(total).fill(false);
+      let cont = 0;
+      while (cont < numImp) {
+        const i = Math.floor(Math.random() * total);
+        if (!impostores[i]) {
+          impostores[i] = true;
+          cont++;
+        }
+      }
+
+      indiceAtual = 0;
+    }
+
+    function revelar() {
+      const display = document.getElementById('exibicao');
+      const btn = document.getElementById('btnRevelar');
+
+      if (impostores[indiceAtual]) {
+        const ordem = impostores.slice(0, indiceAtual + 1).filter(x => x).length;
+        const totalImp = impostores.filter(x => x).length;
+        display.innerHTML = `
+          <span style="color:#ff3366; text-shadow:0 0 12px #ff3366; font-size:22px;">⚠️ ${textos[lang].impostor} ${ordem} ${textos[lang].of} ${totalImp}</span><br>
+          <small style="color:#aaa; margin-top:8px; display:block;">Dica: ${dicaAtual}</small>
+        `;
+      } else {
+        display.innerHTML = `
+          <span style="color:#00ffaa; text-shadow:0 0 12px #00ffaa; font-size:24px;">${palavraSecreta}</span><br>
+          <small style="color:#aaa; margin-top:8px; display:block;">Dica: ${dicaAtual}</small>
+        `;
+      }
+
+      btn.disabled = true;
+      setTimeout(() => {
+        indiceAtual++;
+        if (indiceAtual >= jogadores.length) {
+          display.innerHTML = `<span class="glow" style="font-size:20px;">${textos[lang].discussion}</span>`;
+          btn.style.display = 'none';
+          mostrarBotoesFim();
+        } else {
+          btn.disabled = false;
+          btn.innerText = textos[lang].revealBtn;
+          display.innerHTML = "";
+          document.getElementById('proximoJogador').innerText = `${textos[lang].next}${jogadores[indiceAtual]}`;
+        }
+      }, 5000);
+    }
+
+    function mostrarBotoesFim() {
+      const div = document.createElement('div');
+      div.id = 'botoesFim';
+      div.className = 'btn-group';
+
+      const btn1 = document.createElement('button');
+      btn1.innerText = textos[lang].newGame;
+      btn1.onclick = novaPartida;
+
+      const btn2 = document.createElement('button');
+      btn2.innerText = textos[lang].newGroup;
+      btn2.onclick = voltarParaInicio;
+
+      div.appendChild(btn1);
+      div.appendChild(btn2);
+      document.getElementById('tela2').appendChild(div);
+    }
+
+    function voltarParaInicio() {
+      jogadores = [];
+      indiceAtual = 0;
+      dicaAtual = "";
+      palavraSecreta = "";
+      impostores = [];
+
+      document.getElementById('tela2').classList.add('hidden');
+      document.getElementById('tela1').classList.remove('hidden');
+
+      const fim = document.getElementById('botoesFim');
+      if (fim) fim.remove();
+    }
+
+    atualizarTextos();
+  </script>
+</body>
+</html>
